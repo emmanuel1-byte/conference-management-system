@@ -10,7 +10,142 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model sample {
-  id   Int    @id @default(autoincrement())
-  name String
+model User {
+  id           String        @id @default(uuid())
+  fullname     String
+  email        String        @unique
+  role         Role          @default(Partcipant)
+  password     String
+  refreshtoken String?
+  tokens       Token[]
+  session      Session?
+  notification Notification?
+  payment      Payment?
+  review       Review?
+  conference   Conference[]
+  submission   Submission[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Token {
+  id        String   @id @default(uuid())
+  type      String
+  token     String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @unique
+  expireIn  DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Blacklist {
+  id        String   @id @default(uuid())
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Conference {
+  id           String     @id @default(uuid())
+  organizer    User       @relation(fields: [organizerId], references: [id])
+  organizerId  String     @unique
+  submissions  Submission @relation(fields: [submissionId], references: [id])
+  submissionId String     @unique
+  topic        String
+  venue        String
+  date         DateTime
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  Schedule     Schedule[]
+}
+
+model Submission {
+  id         String           @id @default(uuid())
+  speaker    User             @relation(fields: [speakerId], references: [id])
+  speakerId  String           @unique
+  conference Conference?
+  review     Review?
+  papers     String
+  slides     String
+  status     SubmissionStatus
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+}
+
+model Review {
+  id           String     @id @default(uuid())
+  reviewer     User       @relation(fields: [reviewerId], references: [id])
+  reviewerId   String     @unique
+  submission   Submission @relation(fields: [submissionId], references: [id])
+  submissionId String     @unique
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Schedule {
+  id           String     @id @default(uuid())
+  conference   Conference @relation(fields: [conferenceId], references: [id])
+  conferenceId String
+  session      Session[]
+  startTime    DateTime
+  endTime      DateTime
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Session {
+  id         String   @id @default(uuid())
+  speaker    User     @relation(fields: [userId], references: [id])
+  userId     String   @unique
+  Schedule   Schedule @relation(fields: [scheduleId], references: [id])
+  scheduleId String
+  topic      String
+  startTime  DateTime
+  endTime    DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Payment {
+  id        String        @id @default(uuid())
+  user      User          @relation(fields: [userId], references: [id])
+  userId    String        @unique
+  amount    Decimal
+  status    PaymentStatus
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model Notification {
+  id        String             @id @default(uuid())
+  user      User               @relation(fields: [userId], references: [id])
+  userId    String             @unique
+  content   String
+  type      NotificationStatus
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+}
+
+enum Role {
+  Partcipant
+  Speaker
+  Organizer
+}
+
+enum PaymentStatus {
+  Pending
+  Successfull
+  Failed
+}
+
+enum SubmissionStatus {
+  Submitted
+  Accepted
+  Rejected
+}
+
+enum NotificationStatus {
+  Read
+  Unread
 }
