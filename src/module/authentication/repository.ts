@@ -1,21 +1,16 @@
-import { Utils } from '../../utils/utils'
-import { Token } from '../../utils/utils'
 import bcrypt from 'bcryptjs'
-import { SignIn, SignUp } from './Interface'
+import { Prisma } from '@prisma/client'
+import { prisma } from '../../utils/utils'
 
+export class Repository {
 
-
-export class Repository extends Utils {
-
-    public static async create(data: SignUp) {
+    public static async create(data: Prisma.UserCreateInput) {
         try {
-            data.password = await bcrypt.hash(data.password, 20)
-            return await this.prisma().user.create({
+            const hashedPassword = await bcrypt.hash(data.password, 10)
+            return await prisma().user.create({
                 data: {
-                    fullname: data.fullName,
-                    email: data.email,
-                    role: data.role,
-                    password: data.password
+                  ...data,
+                  password: hashedPassword
                 }
             })
 
@@ -25,11 +20,11 @@ export class Repository extends Utils {
         }
     }
 
-    public static async findUser(data: SignIn) {
+    public static async findUser(email: string) {
         try {
-            return await this.prisma().user.findUnique({
+            return await prisma().user.findUnique({
                 where: {
-                    email: data.email
+                    email: email
                 }
             })
         } catch (err) {
@@ -37,10 +32,10 @@ export class Repository extends Utils {
         }
     }
 
-    
-    public static async user(userId: string){
-        try{
-            return await this.prisma().user.findUnique({
+
+    public static async user(userId: string) {
+        try {
+            return await prisma().user.findUnique({
                 where: {
                     id: userId
                 },
@@ -49,9 +44,37 @@ export class Repository extends Utils {
                     fullname: true,
                     email: true,
                     role: true,
-                    password: true
+                    password: true,
+                    refreshtoken: false
                 }
-                
+
+            })
+
+        } catch (err) {
+            throw err
+        }
+    }
+
+    public static async updateRefreshToken(userId: string) {
+        try {
+            return await prisma().user.update({
+                where: {
+                    id: userId
+                },
+                data: {
+                    refreshtoken: ""
+                }
+            })
+
+        } catch (err) {
+            throw err
+        }
+    }
+
+    public static async createToken(data: Prisma.TokenCreateInput){
+        try{
+            return await prisma().token.create({
+                data: { ...data },
             })
 
         }catch(err){
@@ -59,18 +82,10 @@ export class Repository extends Utils {
         }
     }
 
-    public static async updateRefreshToken(data: Token){
-        try{
-            return await this.prisma().user.update({
-                where: {
-                    id: data.id
-                },
-                data: {
-                    refreshtoken: ""
-                }
-            })
-
-        }catch(err){
+    public static async createBlacklist(token: string) {
+        try {
+            return await prisma().blacklist.create({ data: { token: token } })
+        } catch (err) {
             throw err
         }
     }

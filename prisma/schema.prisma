@@ -17,7 +17,6 @@ model User {
   role         Role          @default(Partcipant)
   password     String
   refreshtoken String?
-  tokens       Token[]
   session      Session?
   notification Notification?
   payment      Payment?
@@ -32,8 +31,7 @@ model Token {
   id        String   @id @default(uuid())
   type      String
   token     String
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String   @unique
+  email     String   @unique
   expireIn  DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
